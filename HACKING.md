@@ -10,13 +10,13 @@ usage:
 	
 	# one-time load of test data
 	cd core
-    go test -v -host http://myelasticsearch.domain:9200  -loaddata 
+    go test -v -host myelasticsearch.domain  -loaddata 
     
     # run unit tests for core
-    go test -v -host http://myelasticsearch.domain:9200 
+    go test -v -host myelasticsearch.domain
 
     cd ../search
-    go test -v -host http://myelasticsearch.domain:9200 
+    go test -v -host myelasticsearch.domain 
 
 Clean out the Elasticsearch index:
     	
