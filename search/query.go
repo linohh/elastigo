@@ -3,7 +3,7 @@ package search
 import (
 	"encoding/json"
 	"fmt"
-	//"log"
+	"log"
 	"strings"
 )
 
@@ -199,5 +199,6 @@ func (t *Terms) MarshalJSON() ([]byte, error) {
 	if len(t.Size) > 0 {
 		m["size"] = t.Size
 	}
+	log.Println(m)
 	return json.Marshal(m)
 }
