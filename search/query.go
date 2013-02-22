@@ -175,7 +175,7 @@ type QueryString struct {
 
 // Generic Term based (used in query, facet, filter)
 type Term struct {
-	Terms Terms `json:"terms,omitempty"`
+	Terms *Terms `json:"terms,omitempty"`
 }
 
 type Terms struct {
