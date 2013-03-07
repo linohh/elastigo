@@ -3,7 +3,7 @@ package search
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	//"log"
 	"strings"
 )
 
@@ -79,7 +79,7 @@ func (qd *QueryDsl) MarshalJSON() ([]byte, error) {
 	return json.Marshal(q)
 }
 
-// get all
+// all documents
 func (q *QueryDsl) All() *QueryDsl {
 	q.MatchAll = &MatchAll{""}
 	return q
@@ -122,12 +122,14 @@ func (q *QueryDsl) Qs(qs *QueryString) *QueryDsl {
 }
 
 // Fields in query_string search
+//
 //     Fields("fieldname","search_for","","")
 //     
 //     Fields("fieldname,field2,field3","search_for","","")
 //
 //     Fields("fieldname,field2,field3","search_for","field_exists","")
 func (q *QueryDsl) Fields(fields, search, exists, missing string) *QueryDsl {
+	// TODO:  Rewrite this to not do this weird empty string foolishness
 	fieldList := strings.Split(fields, ",")
 	qs := NewQueryString("", "")
 	q.QueryEmbed.Qs = &qs
@@ -199,6 +201,6 @@ func (t *Terms) MarshalJSON() ([]byte, error) {
 	if len(t.Size) > 0 {
 		m["size"] = t.Size
 	}
-	log.Println(m)
+	//log.Println(m)
 	return json.Marshal(m)
 }

@@ -8,53 +8,83 @@ import (
 )
 
 var (
-	_ = DEBUG
+	_         = DEBUG
+	ANDCLAUSE = LogicClause("and")
 )
 
-// A bool (and/or) clause
-type BoolClause string
+// A logical clause  [and, or, not]
+type LogicClause string
 
-// Filter clause is either a boolClause or FilterOp
+// Filter clause is either a LogicClause or FilterOp
 type FilterClause interface {
 	String() string
 }
 
 // A wrapper to allow for custom serialization
+//     A filter is a nested set of operators (not,and,or) and the
+//     filter clauses that are contained in them
 type FilterWrap struct {
-	boolClause string
-	filters    []interface{}
+	// The complete map of logic operators to their nested filters
+	filtermap map[LogicClause][]interface{}
+	// The current LogicClause, can be none (which = "and")
+	curClause LogicClause
 }
 
 func NewFilterWrap() *FilterWrap {
-	return &FilterWrap{filters: make([]interface{}, 0), boolClause: "and"}
+	return &FilterWrap{curClause: "and"}
 }
 
 func (f *FilterWrap) String() string {
-	return fmt.Sprintf(`fopv: %d:%v`, len(f.filters), f.filters)
+	return fmt.Sprintf(`fopv: %d:%v`, len(f.filtermap), f.filtermap)
 }
 
-// Custom marshalling to support the query dsl 
-func (f *FilterWrap) addFilters(fl []interface{}) {
-	if len(fl) > 1 {
-		fc := fl[0]
-		switch fc.(type) {
-		case BoolClause, string:
-			f.boolClause = fc.(string)
-			fl = fl[1:]
+// logic associated with adding filters.   
+func (f *FilterWrap) addFilters(filterList []interface{}) {
+	// Default clause is "and"
+	if len(f.curClause) == 0 {
+		f.curClause = LogicClause("and")
+	}
+	if len(f.filtermap) == 0 {
+		f.filtermap = make(map[LogicClause][]interface{})
+	}
+	for _, filterClause := range filterList {
+		switch clauseOp := filterClause.(type) {
+		case LogicClause, string:
+			f.curClause = LogicClause(filterClause.(string))
+		case *QueryDsl:
+			if len(f.filtermap[f.curClause]) == 0 {
+				f.filtermap[f.curClause] = make([]interface{}, 0)
+			}
+			f.filtermap[f.curClause] = append(f.filtermap[f.curClause], map[string]*QueryDsl{"query": clauseOp})
+		case *FilterOp:
+			if len(f.filtermap[f.curClause]) == 0 {
+				f.filtermap[f.curClause] = make([]interface{}, 0)
+			}
+			if clauseOp.not {
+				m := map[string]*FilterOp{"not": clauseOp}
+				f.filtermap[f.curClause] = append(f.filtermap[f.curClause], m)
+			} else {
+				f.filtermap[f.curClause] = append(f.filtermap[f.curClause], clauseOp)
+			}
+		default:
+			Logf(ERROR, "Unkown Filter Clause? %v", clauseOp)
 		}
 	}
-	f.filters = append(f.filters, fl...)
 }
 
 // Custom marshalling to support the query dsl 
 func (f *FilterWrap) MarshalJSON() ([]byte, error) {
+
 	var root interface{}
-	if len(f.filters) > 1 {
-		root = map[string]interface{}{f.boolClause: f.filters}
-	} else if len(f.filters) == 1 {
-		root = f.filters[0]
+	_, hasAnd := f.filtermap[ANDCLAUSE]
+
+	// If we only have one clause and its an and we don't need to
+	// send as that is default for elasticsearch
+	if len(f.filtermap) == 1 && hasAnd && len(f.filtermap[ANDCLAUSE]) == 1 {
+		root = f.filtermap[ANDCLAUSE]
+		return json.Marshal(root)
 	}
-	return json.Marshal(root)
+	return json.Marshal(f.filtermap)
 }
 
 /*
@@ -100,6 +130,16 @@ func (f *FilterWrap) MarshalJSON() ([]byte, error) {
 	    ]
 	}
 
+{
+  "filter": 
+    { "and" : [
+      { "term": { "actor_attributes.location": "portland" } } 
+      , { "not": 
+             { "filter": { "term": {"repository.has_wiki": true} } }
+      }
+    ]
+  }
+}
 */
 
 // Filter Operation
@@ -116,11 +156,12 @@ func Filter() *FilterOp {
 }
 
 type FilterOp struct {
-	curField    string
-	TermsMap    map[string][]interface{}     `json:"terms,omitempty"`
-	Range       map[string]map[string]string `json:"range,omitempty"`
-	Exist       map[string]string            `json:"exists,omitempty"`
-	MisssingVal map[string]string            `json:"missing,omitempty"`
+	curField   string
+	not        bool                         // The not operator
+	TermsMap   map[string][]interface{}     `json:"terms,omitempty"`
+	Range      map[string]map[string]string `json:"range,omitempty"`
+	Exist      map[string]string            `json:"exists,omitempty"`
+	MissingVal map[string]string            `json:"missing,omitempty"`
 }
 
 // A range is a special type of Filter operation
@@ -169,7 +210,11 @@ func (f *FilterOp) Exists(name string) *FilterOp {
 	return f
 }
 func (f *FilterOp) Missing(name string) *FilterOp {
-	f.MisssingVal = map[string]string{"field": name}
+	f.MissingVal = map[string]string{"field": name}
+	return f
+}
+func (f *FilterOp) Not() *FilterOp {
+	f.not = true
 	return f
 }
 
@@ -179,11 +224,25 @@ func (f *FilterOp) Add(fop *FilterOp) *FilterOp {
 	if len(fop.Exist) > 0 {
 		f.Exist = fop.Exist
 	}
-	if len(fop.MisssingVal) > 0 {
-		f.MisssingVal = fop.MisssingVal
+	if len(fop.MissingVal) > 0 {
+		f.MissingVal = fop.MissingVal
 	}
 	if len(fop.Range) > 0 {
 		f.Range = fop.Range
 	}
 	return f
 }
+
+/*
+// Custom marshalling to support the query dsl 
+func (f *FilterOp) MarshalJSON() ([]byte, error) {
+	// Ok, hope this doesn't break with go 1.04 as it is probably 
+	// capitializing on a bug:   to prevent this from becoming a recursive lock
+	// we derefrence, and pointers don't get passed here?
+	if f.not {
+		m := map[string]FilterOp{"not": *f}
+		return json.Marshal(&m)
+	}
+	return json.Marshal(*f)
+}
+*/

@@ -21,7 +21,7 @@ func TestSearchRequest(t *testing.T) {
 	out, err := core.SearchRequest(true, "github", "", qry, "")
 	//log.Println(out)
 	Assert(&out != nil && err == nil, t, "Should get docs")
-	Assert(out.Hits.Total == 589 && out.Hits.Len() == 10, t, "Should have 589 hits but was %v", out.Hits.Total)
+	Assert(CloseInt(out.Hits.Total, 589) && out.Hits.Len() == 10, t, "Should have ~589 hits but was %v", out.Hits.Total)
 }
 
 func TestSearchSimple(t *testing.T) {
@@ -45,7 +45,7 @@ func TestSearchRequestQueryString(t *testing.T) {
 	out, err := core.SearchUri("github", "", "actor:a*", "")
 	//log.Println(out)
 	Assert(&out != nil && err == nil, t, "Should get docs")
-	Assert(out.Hits.Total == 589, t, "Should have 589 hits but was %v", out.Hits.Total)
+	Assert(CloseInt(out.Hits.Total, 589), t, "Should have ~589 hits but was %v", out.Hits.Total)
 }
 
 func TestSearchFacetOne(t *testing.T) {
@@ -131,7 +131,7 @@ func TestSearchFacetOne(t *testing.T) {
 	).Result()
 	h = NewJsonHelper(out.Facets)
 	// still same doc count
-	Assert(h.Int("actor.total") == 5114, t, "Should have 5114 results %v", h.Int("actor.total"))
+	Assert(CloseInt(h.Int("actor.total"), 5114), t, "Should have !5114 results %v", h.Int("actor.total"))
 	// make sure size worked
 	Assert(len(h.List("actor.terms")) == 500, t, "Should have 500 users, %v", len(h.List("actor.terms")))
 

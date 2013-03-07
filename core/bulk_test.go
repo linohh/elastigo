@@ -26,7 +26,7 @@ func TestBulk(t *testing.T) {
 		messageSets += 1
 		totalBytesSent += buf.Len()
 		buffers = append(buffers, buf)
-		//log.Println(string(buf.Bytes()))
+		log.Println(string(buf.Bytes()))
 		return BulkSend(buf)
 	}
 	done := make(chan bool)

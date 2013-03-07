@@ -6,6 +6,9 @@ To run tests, this library loads data into an elasticsearch server as a one-time
 
 See core/test_test.go.   The data set should remain the same as it pulls a known set of github archive data.
 
+Note, there is a CloseInt function that tests docs within 3%, there seems to be some variability in elasticsearch server? on # found?   As successive runs of same test will return slighlty different document total counts?
+
+
 usage:
 	
 	# one-time load of test data
