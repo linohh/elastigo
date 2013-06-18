@@ -25,6 +25,11 @@ var (
 	bulkIndexor *BulkIndexor
 )
 
+type ErrorBuffer struct {
+	Err error
+	Buf *bytes.Buffer
+}
+
 // There is one global bulk indexor available for convenience so the IndexBulk() function can be called.
 // However, the recommended usage is create your own BulkIndexor to allow for multiple seperate elasticsearch
 // servers/host connections.
@@ -40,7 +45,7 @@ func BulkIndexorGlobalRun(maxConns int, done chan bool) {
 	}
 }
 
-// A bulk indexor creates goroutines, and channels for connecting and sending data 
+// A bulk indexor creates goroutines, and channels for connecting and sending data
 // to elasticsearch in bulk, using buffers.
 type BulkIndexor struct {
 
@@ -48,8 +53,13 @@ type BulkIndexor struct {
 	// to allow a mock sendor for test purposes
 	BulkSendor func(*bytes.Buffer) error
 
+	// If we encounter an error in sending, we are going to retry for this long
+	// before returning an error
+	// if 0 it will not retry
+	RetryForSeconds int
+
 	// channel for getting errors
-	ErrorChannel chan error
+	ErrorChannel chan *ErrorBuffer
 
 	// channel for sending to background indexor
 	bulkChannel chan []byte
@@ -78,7 +88,25 @@ func NewBulkIndexor(maxConns int) *BulkIndexor {
 	return &b
 }
 
-// Starts this bulk Indexor running
+// A bulk indexor with more control over error handling
+//    @maxConns is the max number of in flight http requests
+//    @retrySeconds is # of seconds to wait before retrying falied requests
+//
+//   done := make(chan bool)
+//   BulkIndexorGlobalRun(100, done)
+func NewBulkIndexorErrors(maxConns, retrySeconds int) *BulkIndexor {
+	b := BulkIndexor{sendBuf: make(chan *bytes.Buffer, maxConns)}
+	b.lastSendorByTime = true
+	b.buf = new(bytes.Buffer)
+	b.maxConns = maxConns
+	b.RetryForSeconds = retrySeconds
+	b.bulkChannel = make(chan []byte, 100)
+	b.ErrorChannel = make(chan *ErrorBuffer, 20)
+	return &b
+}
+
+// Starts this bulk Indexor running, this Run opens a go routine so is
+// Non blocking
 func (b *BulkIndexor) Run(done chan bool) {
 
 	go func() {
@@ -106,13 +134,31 @@ func (b *BulkIndexor) startHttpSendor() {
 
 	// this sends http requests to elasticsearch it uses maxConns to open up that
 	// many goroutines, each of which will synchronously call ElasticSearch
-	// in theory, the whole set will cause a backup all the way to IndexBulk if 
+	// in theory, the whole set will cause a backup all the way to IndexBulk if
 	// we have consumed all maxConns
 	for i := 0; i < b.maxConns; i++ {
 		go func() {
 			for {
 				buf := <-b.sendBuf
-				b.BulkSendor(buf)
+				err := b.BulkSendor(buf)
+
+				// Perhaps a b.FailureStrategy(err)  ??  with different types of strategies
+				//  1.  Retry, then panic
+				//  2.  Retry then return error and let runner decide
+				//  3.  Retry, then log to disk?   retry later?
+				if err != nil {
+					if b.RetryForSeconds > 0 {
+						time.Sleep(time.Second * time.Duration(b.RetryForSeconds))
+						err = b.BulkSendor(buf)
+						if err == nil {
+							continue
+						}
+					}
+					if b.ErrorChannel != nil {
+						log.Println(err)
+						b.ErrorChannel <- &ErrorBuffer{err, buf}
+					}
+				}
 			}
 		}()
 	}
@@ -164,7 +210,7 @@ func (b *BulkIndexor) send(buf *bytes.Buffer) {
 	b.docCt = 0
 }
 
-// The index bulk API adds or updates a typed JSON document to a specific index, making it searchable. 
+// The index bulk API adds or updates a typed JSON document to a specific index, making it searchable.
 // it operates by buffering requests, and ocassionally flushing to elasticsearch
 // http://www.elasticsearch.org/guide/reference/api/bulk.html
 func (b *BulkIndexor) Index(index string, _type string, id string, date *time.Time, data interface{}) error {
@@ -225,7 +271,7 @@ func IndexBulkBytes(index string, _type string, id string, date *time.Time, data
 	return buf.Bytes(), nil
 }
 
-// The index bulk API adds or updates a typed JSON document to a specific index, making it searchable. 
+// The index bulk API adds or updates a typed JSON document to a specific index, making it searchable.
 // it operates by buffering requests, and ocassionally flushing to elasticsearch
 // http://www.elasticsearch.org/guide/reference/api/bulk.html
 func IndexBulk(index string, _type string, id string, date *time.Time, data interface{}) error {
