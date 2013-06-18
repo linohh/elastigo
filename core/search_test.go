@@ -1,6 +1,7 @@
 package core
 
 import (
+	"github.com/araddon/gou"
 	"testing"
 )
 
@@ -12,6 +13,7 @@ func TestSearchRequest(t *testing.T) {
 	}
 	out, err := SearchRequest(true, "github", "", qry, "")
 	//log.Println(out)
-	Assert(&out != nil && err == nil, t, "Should get docs")
-	Assert(out.Hits.Total == 588 && out.Hits.Len() == 10, t, "Should have 588 hits but was %v", out.Hits.Total)
+	gou.Assert(&out != nil && err == nil, t, "Should get docs")
+	gou.Assert(out.Hits.Len() == 10, t, "Should have 10 docs but was %v", out.Hits.Len())
+	gou.Assert(out.Hits.Total == 589, t, "Should have 589 hits but was %v", out.Hits.Total)
 }

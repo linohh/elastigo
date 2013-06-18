@@ -21,27 +21,31 @@ var (
 
 func TestBulk(t *testing.T) {
 	InitTests(true)
-	BulkSendor = func(buf *bytes.Buffer) error {
+	indexor := NewBulkIndexor(10)
+	indexor.BulkSendor = func(buf *bytes.Buffer) error {
 		messageSets += 1
 		totalBytesSent += buf.Len()
 		buffers = append(buffers, buf)
+		log.Println(string(buf.Bytes()))
 		return BulkSend(buf)
 	}
+	done := make(chan bool)
+	indexor.Run(done)
 
 	date := time.Unix(1257894000, 0)
 	data := map[string]interface{}{"name": "smurfs", "age": 22, "date": time.Unix(1257894000, 0)}
-	err := IndexBulk("users", "user", "1", &date, data)
+	err := indexor.Index("users", "user", "1", &date, data)
 
 	WaitFor(func() bool {
 		return len(buffers) > 0
 	}, 5)
 	// part of request is url, so lets factor that in
-	totalBytesSent = totalBytesSent - len(*eshost)
-	Assert(len(buffers) == 1, t, "Should have sent one operation")
-	Assert(BulkErrorCt == 0 && err == nil, t, "Should not have any errors")
-	Assert(totalBytesSent == 135, t, "Should have sent 135 bytes but was %v", totalBytesSent)
+	//totalBytesSent = totalBytesSent - len(*eshost)
+	Assert(len(buffers) == 1, t, "Should have sent one operation but was %d", len(buffers))
+	Assert(BulkErrorCt == 0 && err == nil, t, "Should not have any errors  %v", err)
+	Assert(totalBytesSent == 145, t, "Should have sent 135 bytes but was %v", totalBytesSent)
 
-	err = IndexBulk("users", "user", "2", nil, data)
+	err = indexor.Index("users", "user", "2", nil, data)
 
 	WaitFor(func() bool {
 		return len(buffers) > 1
@@ -50,7 +54,7 @@ func TestBulk(t *testing.T) {
 	Assert(len(buffers) == 2, t, "Should have nil error, and another buffer")
 
 	Assert(BulkErrorCt == 0 && err == nil, t, "Should not have any errors")
-	Assert(totalBytesSent == 241, t, "Should have sent 241 bytes but was %v", totalBytesSent)
+	Assert(totalBytesSent == 257, t, "Should have sent 257 bytes but was %v", totalBytesSent)
 }
 
 /*
@@ -66,7 +70,7 @@ func BenchmarkBulkSend(b *testing.B) {
 	b.StartTimer()
 	totalBytes := 0
 	sets := 0
-	BulkSendor = func(buf *bytes.Buffer) error {
+	bulkIndexor.BulkSendor = func(buf *bytes.Buffer) error {
 		totalBytes += buf.Len()
 		sets += 1
 		//log.Println("got bulk")
@@ -102,7 +106,7 @@ func BenchmarkBulkSendBytes(b *testing.B) {
 	b.StartTimer()
 	totalBytes := 0
 	sets := 0
-	BulkSendor = func(buf *bytes.Buffer) error {
+	bulkIndexor.BulkSendor = func(buf *bytes.Buffer) error {
 		totalBytes += buf.Len()
 		sets += 1
 		return BulkSend(buf)

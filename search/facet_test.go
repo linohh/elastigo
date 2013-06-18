@@ -16,11 +16,8 @@ func TestFacetRegex(t *testing.T) {
 		t.Fail()
 		return
 	}
-	Debug(string(out.Facets))
+	//Debug(string(out.Facets))
 	fh := NewJsonHelper([]byte(out.Facets))
 	facets := fh.Helpers("/repository.name/terms")
-	Assert(len(facets) == 8, t, "Should have x? docs %v", len(facets))
-	for _, f := range facets {
-		Debug(f)
-	}
+	Assert(len(facets) == 8, t, "Should have 8? docs %v", len(facets))
 }

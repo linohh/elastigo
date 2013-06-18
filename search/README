@@ -2,3 +2,11 @@
 
 To run tests on this, you must first have run/imported data inside of *core*
 
+Some todo items:
+
+
+1.  The Query/Filter/etc operators should all be some type of Interface "Clause" such 
+    that you can pass Queries into Filter
+
+2.  Rewrite the Query() clause of SearchDsl to support many items like query
+

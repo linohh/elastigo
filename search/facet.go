@@ -47,7 +47,7 @@ func (m *FacetDsl) Regex(field, match string) *FacetDsl {
 	if len(m.Terms) == 0 {
 		m.Terms = make(map[string]Term)
 	}
-	m.Terms[field] = Term{Terms{Fields: []string{field}, Regex: match}}
+	m.Terms[field] = Term{&Terms{Fields: []string{field}, Regex: match}}
 	return m
 }
 
@@ -58,7 +58,7 @@ func (m *FacetDsl) Fields(fields ...string) *FacetDsl {
 	if len(m.Terms) == 0 {
 		m.Terms = make(map[string]Term)
 	}
-	m.Terms[fields[0]] = Term{Terms{Fields: fields}}
+	m.Terms[fields[0]] = Term{&Terms{Fields: fields}}
 	return m
 }
 

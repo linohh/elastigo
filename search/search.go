@@ -47,6 +47,7 @@ func (s *SearchDsl) Bytes() ([]byte, error) {
 	return api.DoCommand("POST", s.url(), s)
 }
 
+// Get the Result response from ElasticSearch of this set of criteria
 func (s *SearchDsl) Result() (*core.SearchResult, error) {
 	var retval core.SearchResult
 	if core.DebugRequests {
@@ -92,6 +93,7 @@ func (s *SearchDsl) getType() string {
 	return ""
 }
 
+// the built in elasticsearch paging argument
 func (s *SearchDsl) From(from string) *SearchDsl {
 	s.args.Set("from", from)
 	return s
@@ -114,6 +116,29 @@ func (s *SearchDsl) Facet(f *FacetDsl) *SearchDsl {
 	return s
 }
 
+// Pass a Query expression to this search
+//
+//		qry := Search("github").Pretty().Query(
+//			Query().All(),
+//		)
+//
+//		qry := Search("github").Size("50").Query(
+//			Query().Search("python"),
+//		)
+//
+//		qry := Search("github").Pretty().Query(
+//			Query().Range(
+//				Range().Field("created_at").From("2012-12-10T15:00:00-08:00").To("2012-12-10T15:10:00-08:00"),
+//			).Search("add"),
+//		)
+//
+//		qry := Search("github").Pretty().Query(
+//			Query().Term("repository.name", "jasmine"),
+//		)
+//
+//		qry := Search("github").Pretty().Query(
+//			Query().Term("repository.name", "jasmine"),
+//		)
 func (s *SearchDsl) Query(q *QueryDsl) *SearchDsl {
 	s.QueryVal = q
 	return s
@@ -136,6 +161,11 @@ func (s *SearchDsl) Query(q *QueryDsl) *SearchDsl {
 //         Filter().Exists("repository.name"),
 //         Filter().Terms("repository.has_wiki", true)
 //     )
+//
+//     // this is same as above query, but composed in seperate calls
+//     qry := Search("github")
+//     qry.Filter(Filter().Exists("repository.name"))
+//     qry.Filter(Filter().Terms("repository.has_wiki", true))
 func (s *SearchDsl) Filter(fl ...interface{}) *SearchDsl {
 	if s.FilterVal == nil {
 		s.FilterVal = NewFilterWrap()
@@ -145,6 +175,13 @@ func (s *SearchDsl) Filter(fl ...interface{}) *SearchDsl {
 	return s
 }
 
+// Sort the documents in this result set
+//
+//     qry := Search("github").Filter(
+//         Filter().Terms("repository.has_wiki", true)
+//     ).Sort(
+//         Sort("repository.watchers").Desc(),
+//     )
 func (s *SearchDsl) Sort(sort ...*SortDsl) *SearchDsl {
 	if s.SortBody == nil {
 		s.SortBody = make([]*SortDsl, 0)
