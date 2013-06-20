@@ -10,11 +10,11 @@ import (
 // The cluster health API allows to get a very simple status on the health of the cluster.
 // see http://www.elasticsearch.org/guide/reference/api/admin-cluster-health.html
 // TODO: implement wait_for_status, timeout, wait_for_relocating_shards, wait_for_nodes
-// TODO: implement level (Can be one of cluster, indices or shards. Controls the details level of the health 
+// TODO: implement level (Can be one of cluster, indices or shards. Controls the details level of the health
 // information returned. Defaults to cluster.)
-func Reroute(pretty bool, dryRun bool, commands Commands) (ClusterHealthResponse, error) {
+func Reroute(pretty bool, dryRun bool, commands Commands) (api.ClusterHealthResponse, error) {
 	var url string
-	var retval ClusterHealthResponse
+	var retval api.ClusterHealthResponse
 	if len(commands.Commands) > 0 {
 		url = fmt.Sprintf("/_cluster/reroute%s&%s", api.Pretty(pretty), dryRunOption(dryRun))
 	} else {
