@@ -12,13 +12,13 @@ import (
 // TODO: implement wait_for_status, timeout, wait_for_relocating_shards, wait_for_nodes
 // TODO: implement level (Can be one of cluster, indices or shards. Controls the details level of the health
 // information returned. Defaults to cluster.)
-func Health(pretty bool, indices ...string) (api.ClusterHealthResponse, error) {
+func Health(indices ...string) (api.ClusterHealthResponse, error) {
 	var url string
 	var retval api.ClusterHealthResponse
 	if len(indices) > 0 {
-		url = fmt.Sprintf("/_cluster/health/%s?%s", strings.Join(indices, ","), api.Pretty(pretty))
+		url = fmt.Sprintf("/_cluster/health/%s", strings.Join(indices, ","))
 	} else {
-		url = fmt.Sprintf("/_cluster/health?%s", api.Pretty(pretty))
+		url = fmt.Sprintf("/_cluster/health")
 	}
 	body, err := api.DoCommand("GET", url, nil)
 	if err != nil {
