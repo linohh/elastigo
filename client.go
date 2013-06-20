@@ -58,9 +58,9 @@ func main() {
 	response, _ = core.Get(true, "twitter", "tweet", "1")
 	log.Printf("Get: %v", response.Exists)
 
-	healthResponse, _ := cluster.Health(true)
+	healthResponse, _ := cluster.Health()
 	log.Printf("Health: %v", healthResponse.Status)
 
-	cluster.State("transient", "discovery.zen.minimum_master_nodes", 2)
+	cluster.UpdateSetting("transient", "discovery.zen.minimum_master_nodes", 2)
 
 }
