@@ -5,11 +5,48 @@ type NodeStatsReponse struct {
 	Nodes       map[string]NodeStatsNodeResponse
 }
 type NodeStatsNodeResponse struct {
-	Name             string                   `json:"name"`
-	Timestamp        int64                    `json:"timestamp"`
-	TransportAddress string                   `json:"transport_address"`
-	Hostname         string                   `json:"hostname"`
-	Indices          NodeStatsIndicesResponse `json:"indices"`
+	Name             string                                     `json:"name"`
+	Timestamp        int64                                      `json:"timestamp"`
+	TransportAddress string                                     `json:"transport_address"`
+	Hostname         string                                     `json:"hostname"`
+	Indices          NodeStatsIndicesResponse                   `json:"indices"`
+	OS               NodeStatsOSResponse                        `json:"os"`
+	Network          NodeStatsNetworkResponse                   `json:"network"`
+	ThreadPool       map[string]NodeStatsThreadPoolPoolResponse `json:"thread_pool"`
+}
+
+type NodeStatsNetworkResponse struct {
+	TCP NodeStatsTCPResponse `json:"tcp"`
+}
+
+type NodeStatsTransportResponse struct {
+	ServerOpen int64 `json:"server_open"`
+	RxCount    int64 `json:"rx_count"`
+	RxSize     int64 `json:"rx_size_in_bytes"`
+	TxCount    int64 `json:"tx_count"`
+	TxSize     int64 `json:"tx_size_in_bytes"`
+}
+
+type NodeStatsThreadPoolPoolResponse struct {
+	Threads   int64 `json:"threads"`
+	Queue     int64 `json:"queue"`
+	Active    int64 `json:"active"`
+	Rejected  int64 `json:"rejected"`
+	Largest   int64 `json:"largest"`
+	Completed int64 `json:"completed"`
+}
+
+type NodeStatsTCPResponse struct {
+	ActiveOpens  int64 `json:"active_opens"`
+	PassiveOpens int64 `json:"passive_opens"`
+	CurrEstab    int64 `json:"curr_estab"`
+	InSegs       int64 `json:"in_segs"`
+	OutSegs      int64 `json:"out_segs"`
+	RetransSegs  int64 `json:"retrans_segs"`
+	EstabResets  int64 `json:"estab_resets"`
+	AttemptFails int64 `json:"attempt_fails"`
+	InErrs       int64 `json:"in_errs"`
+	OutRsts      int64 `json:"out_rsts"`
 }
 
 type NodeStatsIndicesResponse struct {
@@ -18,34 +55,6 @@ type NodeStatsIndicesResponse struct {
 	Indexing NodeStatsIndicesIndexingResponse
 	Get      NodeStatsIndicesGetResponse
 	Search   NodeStatsIndicesStoreResponse
-}
-
-type NodeStatsOSResponse struct {
-	Timestamp int64                   `json:"timestamp"`
-	Uptime    int64                   `json:"uptime_in_millis"`
-	LoadAvg   []float64               `json:"load_average"`
-	CPU       NodeStatsOSCPUResponse  `json:"cpu"`
-	Mem       NodeStatsOSMemResponse  `json:"mem"`
-	Swap      NodeStatsOSSwapResponse `json:"swap"`
-}
-
-type NodeStatsOSMemResponse struct {
-	Free       int64 `json:"free_in_bytes"`
-	Used       int64 `json:"used_in_bytes"`
-	ActualFree int64 `json:"actual_free_in_bytes"`
-	ActualUsed int64 `json:"actual_used_in_bytes"`
-}
-
-type NodeStatsOSSwapResponse struct {
-	Used int64 `json:"used_in_bytes"`
-	Free int64 `json:"free_in_bytes"`
-}
-
-type NodeStatsOSCPUResponse struct {
-	Sys   int64 `json:"sys"`
-	User  int64 `json:"user"`
-	Idle  int64 `json:"idle"`
-	Steal int64 `json:"stolen"`
 }
 
 type NodeStatsIndicesDocsResponse struct {
@@ -85,4 +94,52 @@ type NodeStatsIndicesSearchResponse struct {
 	FetchTotal   int64 `json:"fetch_total"`
 	FetchTime    int64 `json:"fetch_time_in_millis"`
 	FetchCurrent int64 `json:"fetch_current"`
+}
+
+type NodeStatsOSResponse struct {
+	Timestamp int64                   `json:"timestamp"`
+	Uptime    int64                   `json:"uptime_in_millis"`
+	LoadAvg   []float64               `json:"load_average"`
+	CPU       NodeStatsOSCPUResponse  `json:"cpu"`
+	Mem       NodeStatsOSMemResponse  `json:"mem"`
+	Swap      NodeStatsOSSwapResponse `json:"swap"`
+}
+
+type NodeStatsOSMemResponse struct {
+	Free       int64 `json:"free_in_bytes"`
+	Used       int64 `json:"used_in_bytes"`
+	ActualFree int64 `json:"actual_free_in_bytes"`
+	ActualUsed int64 `json:"actual_used_in_bytes"`
+}
+
+type NodeStatsOSSwapResponse struct {
+	Used int64 `json:"used_in_bytes"`
+	Free int64 `json:"free_in_bytes"`
+}
+
+type NodeStatsOSCPUResponse struct {
+	Sys   int64 `json:"sys"`
+	User  int64 `json:"user"`
+	Idle  int64 `json:"idle"`
+	Steal int64 `json:"stolen"`
+}
+
+type NodeStatsProcessResponse struct {
+	Timestamp int64                       `json:"timestamp"`
+	OpenFD    int64                       `json:"open_file_descriptors"`
+	CPU       NodeStatsProcessCPUResponse `json:"cpu"`
+	Memory    NodeStatsProcessMemResponse `json:"mem"`
+}
+
+type NodeStatsProcessMemResponse struct {
+	Resident     int64 `json:"resident_in_bytes"`
+	Share        int64 `json:"share_in_bytes"`
+	TotalVirtual int64 `json:"total_virtual_in_bytes"`
+}
+
+type NodeStatsProcessCPUResponse struct {
+	Percent int64 `json:"percent"`
+	Sys     int64 `json:"sys_in_millis"`
+	User    int64 `json:"user_in_millis"`
+	Total   int64 `json:"total_in_millis"`
 }
