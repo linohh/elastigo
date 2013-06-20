@@ -143,3 +143,26 @@ type NodeStatsProcessCPUResponse struct {
 	User    int64 `json:"user_in_millis"`
 	Total   int64 `json:"total_in_millis"`
 }
+
+type NodeStatsHTTPResponse struct {
+	CurrentOpen int64 `json:"current_open"`
+	TotalOpen   int64 `json:"total_open"`
+}
+
+type NodeStatsFSResponse struct {
+	Timestamp int64                              `json:"timestamp"`
+	Data      map[string]NodeStatsFSDataResponse `json:"data"`
+}
+
+type NodeStatsFSDataResponse struct {
+	Path          string `json:"path"`
+	Mount         string `json:"mount"`
+	Device        string `json:"dev"`
+	Total         int64  `json:"total_in_bytes"`
+	Free          int64  `json:"free_in_bytes"`
+	Available     int64  `json:"available_in_bytes"`
+	DiskReads     int64  `json:"disk_reads"`
+	DiskWrites    int64  `json:"disk_writes"`
+	DiskReadSize  int64  `json:"disk_read_size_in_bytes"`
+	DiskWriteSize int64  `json:"disk_write_size_in_bytes"`
+}
