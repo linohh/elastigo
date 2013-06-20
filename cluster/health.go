@@ -10,7 +10,7 @@ import (
 // The cluster health API allows to get a very simple status on the health of the cluster.
 // see http://www.elasticsearch.org/guide/reference/api/admin-cluster-health.html
 // TODO: implement wait_for_status, timeout, wait_for_relocating_shards, wait_for_nodes
-// TODO: implement level (Can be one of cluster, indices or shards. Controls the details level of the health 
+// TODO: implement level (Can be one of cluster, indices or shards. Controls the details level of the health
 // information returned. Defaults to cluster.)
 func Health(pretty bool, indices ...string) (ClusterHealthResponse, error) {
 	var url string
@@ -36,16 +36,16 @@ func Health(pretty bool, indices ...string) (ClusterHealthResponse, error) {
 }
 
 type ClusterStateFilter struct {
-	FilterNodes bool
+	FilterNodes        bool
 	FilterRoutingTable bool
-	FilterMetadata bool
-	FilterBlocks bool
-	FilterIndices string[]
+	FilterMetadata     bool
+	FilterBlocks       bool
+	FilterIndices      []string
 }
 
 func (f ClusterStateFilter) Parameterize() []string {
 	var parts []string
-	
+
 	if f.FilterNodes {
 		parts = append(parts, "filter_nodes=true")
 	}
@@ -63,28 +63,27 @@ func (f ClusterStateFilter) Parameterize() []string {
 	}
 
 	if f.FilterIndices != nil && len(f.FilterIndices) > 0 {
-		parts = append(parts, strings.Join([]string{"filter_indices=", strings.Join(f.FilterIndices, ",")})
+		parts = append(parts, strings.Join([]string{"filter_indices=", strings.Join(f.FilterIndices, ",")}, ""))
 	}
 
 	return parts
 }
 
-func State(pretty bool, filter ClusterStateFilter) (ClusterStateResponse, error) {
+func ClusterState(pretty bool, filter ClusterStateFilter) (ClusterStateResponse, error) {
 	var parameters []string
 	var url string
+	var retval ClusterStateResponse
 
-	if(filter != nil){
-		parameters = filter.Parameterize()
-	}
+	parameters = filter.Parameterize()
 
 	// prettyfication should be a single parameter somewhere, this is cluttering the method signatures
-	if(pretty){
+	if pretty {
 		parameters = append(parameters, api.Pretty(pretty))
 	}
 
-	url = fmt.Sprintf("/_cluster/state?%s", strings.Join(fragments, "&"))
+	url = fmt.Sprintf("/_cluster/state?%s", strings.Join(parameters, "&"))
 
-	body, err = api.DoCommand("GET", url, nil)
+	body, err := api.DoCommand("GET", url, nil)
 	if err != nil {
 		return retval, err
 	}
@@ -97,24 +96,4 @@ func State(pretty bool, filter ClusterStateFilter) (ClusterStateResponse, error)
 	}
 	return retval, err
 
-}
-
-
-
-
-type ClusterHealthResponse struct {
-	ClusterName         string `json:"cluster_name"`
-	Status              string `json:"status"`
-	TimedOut            bool   `json:"timed_out"`
-	NumberOfNodes       int    `json:"number_of_nodes"`
-	NumberOfDataNodes   int    `json:"number_of_data_nodes"`
-	ActivePrimaryShards int    `json:"active_primary_shards"`
-	ActiveShards        int    `json:"active_shards"`
-	RelocatingShards    int    `json:"relocating_shards"`
-	InitializingShards  int    `json:"initializing_shards"`
-	UnassignedShards    int    `json:"unassigned_shards"`
-}
-
-type ClusterStateResponse struct {
-	
 }
