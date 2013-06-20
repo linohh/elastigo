@@ -41,17 +41,12 @@ func (f ClusterStateFilter) Parameterize() []string {
 	return parts
 }
 
-func ClusterState(pretty bool, filter ClusterStateFilter) (api.ClusterStateResponse, error) {
+func ClusterState(filter ClusterStateFilter) (api.ClusterStateResponse, error) {
 	var parameters []string
 	var url string
 	var retval api.ClusterStateResponse
 
 	parameters = filter.Parameterize()
-
-	// prettyfication should be a single parameter somewhere, this is cluttering the method signatures
-	if pretty {
-		parameters = append(parameters, api.Pretty(pretty))
-	}
 
 	url = fmt.Sprintf("/_cluster/state?%s", strings.Join(parameters, "&"))
 
