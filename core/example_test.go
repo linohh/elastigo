@@ -8,7 +8,11 @@ import (
 
 // The simplest usage of background bulk indexing
 func ExampleBulkIndexor_simple() {
+<<<<<<< HEAD
 	indexor := core.NewBulkIndexor(10)
+=======
+	indexor := core.NewBulkIndexorErrors(10, 60)
+>>>>>>> upstream/master
 	done := make(chan bool)
 	indexor.Run(done)
 
@@ -17,7 +21,11 @@ func ExampleBulkIndexor_simple() {
 
 // The simplest usage of background bulk indexing with error channel
 func ExampleBulkIndexor_errorchannel() {
+<<<<<<< HEAD
 	indexor := core.NewBulkIndexor(10)
+=======
+	indexor := core.NewBulkIndexorErrors(10, 60)
+>>>>>>> upstream/master
 	done := make(chan bool)
 	indexor.Run(done)
 
@@ -29,7 +37,11 @@ func ExampleBulkIndexor_errorchannel() {
 
 // The simplest usage of background bulk indexing with error channel
 func ExampleBulkIndexor_errorsmarter() {
+<<<<<<< HEAD
 	indexor := core.NewBulkIndexor(10)
+=======
+	indexor := core.NewBulkIndexorErrors(10, 60)
+>>>>>>> upstream/master
 	done := make(chan bool)
 	indexor.Run(done)
 

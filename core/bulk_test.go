@@ -4,14 +4,17 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/json"
+	"flag"
+	u "github.com/araddon/gou"
+	"github.com/mattbaird/elastigo/api"
 	"log"
 	"strconv"
 	"testing"
 	"time"
 )
 
-//  go test -bench=".*" 
-//  go test -bench="Bulk" 
+//  go test -bench=".*"
+//  go test -bench="Bulk"
 
 var (
 	buffers        = make([]*bytes.Buffer, 0)
@@ -19,6 +22,12 @@ var (
 	messageSets    int
 )
 
+func init() {
+	flag.Parse()
+	if testing.Verbose() {
+		u.SetupLogging("debug")
+	}
+}
 func TestBulk(t *testing.T) {
 	InitTests(true)
 	indexor := NewBulkIndexor(10)
@@ -54,14 +63,45 @@ func TestBulk(t *testing.T) {
 	Assert(len(buffers) == 2, t, "Should have nil error, and another buffer")
 
 	Assert(BulkErrorCt == 0 && err == nil, t, "Should not have any errors")
+<<<<<<< HEAD
 	Assert(totalBytesSent == 257, t, "Should have sent 257 bytes but was %v", totalBytesSent)
+=======
+	Assert(u.CloseInt(totalBytesSent, 257), t, "Should have sent 257 bytes but was %v", totalBytesSent)
+}
+
+func TestBulkErrors(t *testing.T) {
+	// lets set a bad port, and hope we get a connection refused error?
+	api.Port = "27845"
+	defer func() {
+		api.Port = "9200"
+	}()
+	BulkDelaySeconds = 1
+	indexor := NewBulkIndexorErrors(10, 1)
+	done := make(chan bool)
+	indexor.Run(done)
+
+	errorCt := 0
+	go func() {
+		for i := 0; i < 20; i++ {
+			date := time.Unix(1257894000, 0)
+			data := map[string]interface{}{"name": "smurfs", "age": 22, "date": time.Unix(1257894000, 0)}
+			indexor.Index("users", "user", strconv.Itoa(i), &date, data)
+		}
+	}()
+	for errBuf := range indexor.ErrorChannel {
+		errorCt++
+		u.Debug(errBuf.Err)
+		break
+	}
+	u.Assert(errorCt > 0, t, "ErrorCt should be > 0 %d", errorCt)
+>>>>>>> upstream/master
 }
 
 /*
-BenchmarkBulkSend	18:33:00 bulk_test.go:131: Sent 1 messages in 0 sets totaling 0 bytes 
-18:33:00 bulk_test.go:131: Sent 100 messages in 1 sets totaling 145889 bytes 
-18:33:01 bulk_test.go:131: Sent 10000 messages in 100 sets totaling 14608888 bytes 
-18:33:05 bulk_test.go:131: Sent 20000 messages in 99 sets totaling 14462790 bytes 
+BenchmarkBulkSend	18:33:00 bulk_test.go:131: Sent 1 messages in 0 sets totaling 0 bytes
+18:33:00 bulk_test.go:131: Sent 100 messages in 1 sets totaling 145889 bytes
+18:33:01 bulk_test.go:131: Sent 10000 messages in 100 sets totaling 14608888 bytes
+18:33:05 bulk_test.go:131: Sent 20000 messages in 99 sets totaling 14462790 bytes
    20000	    234526 ns/op
 
 */
@@ -91,9 +131,9 @@ func BenchmarkBulkSend(b *testing.B) {
 /*
 TODO:  this should be faster than above
 
-BenchmarkBulkSendBytes	18:33:05 bulk_test.go:169: Sent 1 messages in 0 sets totaling 0 bytes 
-18:33:05 bulk_test.go:169: Sent 100 messages in 2 sets totaling 292299 bytes 
-18:33:09 bulk_test.go:169: Sent 10000 messages in 99 sets totaling 14473800 bytes 
+BenchmarkBulkSendBytes	18:33:05 bulk_test.go:169: Sent 1 messages in 0 sets totaling 0 bytes
+18:33:05 bulk_test.go:169: Sent 100 messages in 2 sets totaling 292299 bytes
+18:33:09 bulk_test.go:169: Sent 10000 messages in 99 sets totaling 14473800 bytes
    10000	    373529 ns/op
 
 */
